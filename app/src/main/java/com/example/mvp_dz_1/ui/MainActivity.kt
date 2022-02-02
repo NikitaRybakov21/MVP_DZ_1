@@ -1,49 +1,46 @@
-package com.example.mvp_dz_1.ui
+package vboyko.gb.libs.lesson1
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.View
-import com.example.mvp_dz_1.R
-import com.example.mvp_dz_1.databinding.ActivityMainBinding
-import com.example.mvp_dz_1.presenter.BTN_1
-import com.example.mvp_dz_1.presenter.BTN_2
-import com.example.mvp_dz_1.presenter.BTN_3
-import com.example.mvp_dz_1.presenter.Presenter
+import com.github.terrakok.cicerone.NavigatorHolder
+import com.github.terrakok.cicerone.androidx.AppNavigator
+import moxy.MvpAppCompatActivity
+import moxy.ktx.moxyPresenter
+import org.koin.android.ext.android.inject
+import vboyko.gb.libs.lesson1.databinding.ActivityMainBinding
 
-class MainActivity : AppCompatActivity() , UiInterface {
+class MainActivity : MvpAppCompatActivity(), MainView {
 
-    private lateinit var binding : ActivityMainBinding
-    private val presenter = Presenter(this)
+    private val navigatorHolder: NavigatorHolder by inject()
+
+    private val navigator = AppNavigator(this, R.id.container)
+
+    private val presenter by moxyPresenter { MainPresenter() }
+
+    private var vb: ActivityMainBinding? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        val listener = View.OnClickListener {
-            when(it.id){
-                R.id.buttonCounter1 -> {
-                    presenter.counterClick(BTN_1)
-                }
-                R.id.buttonCounter2 -> {
-                    presenter.counterClick(BTN_2)
-                }
-                R.id.buttonCounter3 -> {
-                    presenter.counterClick(BTN_3)
-                }
-            }
-        }
-
-        binding.buttonCounter1.setOnClickListener(listener)
-        binding.buttonCounter2.setOnClickListener(listener)
-        binding.buttonCounter3.setOnClickListener(listener)
+        vb = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(vb?.root)
     }
 
-    override fun setText(text: String) {
-        when(2){
-            0 -> binding.buttonCounter1.text = text
-            1 -> binding.buttonCounter2.text = text
-            2 -> binding.buttonCounter3.text = text
+    override fun onResumeFragments() {
+        super.onResumeFragments()
+        navigatorHolder.setNavigator(navigator)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        navigatorHolder.removeNavigator()
+    }
+
+    override fun onBackPressed() {
+        supportFragmentManager.fragments.forEach {
+            if (it is BackButtonListener && it.backPressed()) {
+                return
+            }
         }
+        presenter.backClicked()
+        super.onBackPressed()
     }
 }
